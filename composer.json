@@ -1,6 +1,6 @@
 {
     "name": "digit-soft/re-action-promise",
-    "version": "0.1.0",
+    "version": "0.1.1",
     "description": "A wrapper around ReactPHP Promises with chain dependencies",
     "keywords": ["digit-soft", "reactphp", "promise", "re-action promise"],
     "license": "MIT",
