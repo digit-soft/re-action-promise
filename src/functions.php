@@ -302,14 +302,14 @@ function _checkTypehint(callable $callback, $object)
  * @param bool $reassign
  */
 function _mergeDependencies(&$dep, &$dep2, $reassign = false) {
-    if($dep === null || $dep2 === null) {
+    if ($dep === null || $dep2 === null) {
         return;
     }
     foreach ($dep2 as $key => $value) {
         echo $key . "\n";
         $dep->addDependency($value, $key);
     }
-    if($reassign) {
+    if ($reassign) {
         $dep2 = $dep;
     }
 }
