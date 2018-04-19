@@ -7,9 +7,9 @@ use React\Promise\ExtendedPromiseInterface;
 use React\Promise\PromiseInterface;
 
 /**
- * @param PromiseInterface|ExtendedPromiseInterface|mixed $promiseOrValue
+ * @param PromiseInterface|mixed $promiseOrValue
  * @param ChainDependencyInterface|null $chainDependency
- * @return mixed|ExtendedPromiseInterface|PromiseInterface|FulfilledPromise|Promise
+ * @return PromiseWithDependenciesInterface|ExtendedPromiseInterface|PromiseInterface|FulfilledPromise|Promise
  */
 function resolve($promiseOrValue = null, ChainDependencyInterface &$chainDependency = null)
 {

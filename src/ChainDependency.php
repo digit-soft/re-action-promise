@@ -4,7 +4,7 @@ namespace Reaction\Promise;
 
 /**
  * Class ChainDependency. Fully sync package.
- * @package DigitSoft\Promise
+ * @package Reaction\Promise
  */
 class ChainDependency implements ChainDependencyInterface, \IteratorAggregate, \Countable
 {

@@ -10,9 +10,9 @@ use React\Promise\PromiseInterface;
  * Class Promise
  * @package Reaction\Promise
  */
-class Promise implements ExtendedPromiseInterface, PromiseWithDependenciesInterface
+class Promise implements PromiseWithDependenciesInterface
 {
-    /** @var callable */
+    /** @var callable|null */
     private $canceller;
     /** @var FulfilledPromise|RejectedPromise */
     private $result;
@@ -251,7 +251,7 @@ class Promise implements ExtendedPromiseInterface, PromiseWithDependenciesInterf
     }
 
     /**
-     * @param ExtendedPromiseInterface $promise
+     * @param ExtendedPromiseInterface|PromiseWithDependenciesInterface $promise
      */
     private function settle(ExtendedPromiseInterface $promise)
     {

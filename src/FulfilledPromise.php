@@ -6,6 +6,10 @@ use React\Promise\CancellablePromiseInterface;
 use React\Promise\ExtendedPromiseInterface;
 use React\Promise\PromiseInterface;
 
+/**
+ * Class FulfilledPromise
+ * @package Reaction\Promise
+ */
 class FulfilledPromise implements ExtendedPromiseInterface, CancellablePromiseInterface, PromiseWithDependenciesInterface
 {
     private $value;
