@@ -23,7 +23,9 @@ class FulfilledPromise implements ExtendedPromiseInterface, CancellablePromiseIn
             throw new \InvalidArgumentException('You cannot create React\Promise\FulfilledPromise with a promise. Use React\Promise\resolve($promiseOrValue) instead.');
         }
 
-        if(isset($chainDependency)) $this->chainDependency = $chainDependency;
+        if (isset($chainDependency)) {
+            $this->chainDependency = $chainDependency;
+        }
 
         $this->value = $value;
     }
@@ -37,8 +39,6 @@ class FulfilledPromise implements ExtendedPromiseInterface, CancellablePromiseIn
         try {
             return resolve($onFulfilled($this->value, $this->chainDependency), $this->chainDependency);
         } catch (\Throwable $exception) {
-            return new RejectedPromise($exception, $this->chainDependency);
-        } catch (\Exception $exception) {
             return new RejectedPromise($exception, $this->chainDependency);
         }
     }

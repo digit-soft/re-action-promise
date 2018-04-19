@@ -20,7 +20,7 @@ class ChainDependency implements ChainDependencyInterface, \IteratorAggregate, \
      * @return ChainDependency
      */
     public function addDependency($value, $key = null) {
-        if(!isset($key) && is_object($value)) {
+        if (!isset($key) && is_object($value)) {
             $key = get_class($value);
         }
         return $this->addDependencyInternal($value, $key);
@@ -34,8 +34,10 @@ class ChainDependency implements ChainDependencyInterface, \IteratorAggregate, \
      */
     public function getDependency($key, $defaultValue = null) {
         $key = $this->processKey($key);
-        if(!$this->hasDependency($key)) return $defaultValue;
-        if(is_array($this->dependencies[$key]) && isset($this->dependencies[$key]['#value'])) {
+        if (!$this->hasDependency($key)) {
+            return $defaultValue;
+        }
+        if (is_array($this->dependencies[$key]) && isset($this->dependencies[$key]['#value'])) {
             return $this->dependencies[$key]['#value'];
         }
         return $this->dependencies[$key];
@@ -104,7 +106,9 @@ class ChainDependency implements ChainDependencyInterface, \IteratorAggregate, \
      */
     public function setScenario($scenario) {
         $scenarios = [static::SCENARIO_OVERWRITE, static::SCENARIO_WRITE_ONCE, static::SCENARIO_MERGE];
-        if(in_array($scenario, $scenarios)) $this->scenario = $scenario;
+        if (in_array($scenario, $scenarios)) {
+            $this->scenario = $scenario;
+        }
         return $this;
     }
 
@@ -131,7 +135,9 @@ class ChainDependency implements ChainDependencyInterface, \IteratorAggregate, \
      */
     public function setType($type) {
         $types = [static::TYPE_DEFINED_ONLY, static::TYPE_ARBITRARY];
-        if(in_array($type, $types)) $this->type = $type;
+        if (in_array($type, $types)) {
+            $this->type = $type;
+        }
         return $this;
     }
 
@@ -141,7 +147,9 @@ class ChainDependency implements ChainDependencyInterface, \IteratorAggregate, \
      * @return mixed|string
      */
     protected function processKey($key) {
-        if(is_string($key)) return $key;
+        if (is_string($key)) {
+            return $key;
+        }
         return md5(json_encode($key));
     }
 
@@ -153,20 +161,26 @@ class ChainDependency implements ChainDependencyInterface, \IteratorAggregate, \
      * @internal
      */
     protected function addDependencyInternal($value, $key) {
-        if(null === $value || null === $key) return $this;
+        if (null === $value || null === $key) {
+            return $this;
+        }
         $key = $this->processKey($key);
-        if($this->type === static::TYPE_DEFINED_ONLY && !array_key_exists($key, $this->dependencies)) return $this;
+        if ($this->type === static::TYPE_DEFINED_ONLY && !array_key_exists($key, $this->dependencies)) {
+            return $this;
+        }
         switch ($this->scenario) {
             case static::SCENARIO_OVERWRITE:
                 $this->dependencies[$key] = $value;
                 break;
             case static::SCENARIO_WRITE_ONCE:
-                if(!isset($this->dependencies[$key])) $this->dependencies[$key] = $value;
+                if (!isset($this->dependencies[$key])) {
+                    $this->dependencies[$key] = $value;
+                }
                 break;
             case static::SCENARIO_MERGE:
-                if(!isset($this->dependencies[$key])) {
+                if (!isset($this->dependencies[$key])) {
                     $this->dependencies[$key] = $value;
-                } elseif(isset($this->dependencies[$key]['#merged'])) {
+                } elseif (isset($this->dependencies[$key]['#merged'])) {
                     $this->dependencies[$key]['#value'][] = $value;
                 } else {
                     $oldValue = $this->dependencies[$key];
@@ -188,9 +202,13 @@ class ChainDependency implements ChainDependencyInterface, \IteratorAggregate, \
      * @return mixed|null
      */
     public static function getDependencyFromArgs($arguments = [], $key = null, $defaultValue = null) {
-        if($key === null) return null;
+        if ($key === null) {
+            return null;
+        }
         /** @var ChainDependencyInterface $instance */
-        if(($instance = static::instanceFromArguments($arguments)) === null) return null;
+        if (($instance = static::instanceFromArguments($arguments)) === null) {
+            return null;
+        }
         return $instance->getDependency($key, $defaultValue);
     }
 
@@ -203,7 +221,9 @@ class ChainDependency implements ChainDependencyInterface, \IteratorAggregate, \
      */
     public static function addDependencyToArgs($arguments = [], $value, $key = null) {
         /** @var ChainDependencyInterface $instance */
-        if(($instance = static::instanceFromArguments($arguments)) === null) return null;
+        if (($instance = static::instanceFromArguments($arguments)) === null) {
+            return null;
+        }
         return $instance->addDependency($value, $key);
     }
 
@@ -216,7 +236,9 @@ class ChainDependency implements ChainDependencyInterface, \IteratorAggregate, \
         $arguments = array_values($arguments);
         $argumentsCount = count($arguments);
         for ($i = 0; $i < $argumentsCount; $i++) {
-            if(is_object($arguments[$i]) && $arguments[$i] instanceof ChainDependencyInterface) return $arguments[$i];
+            if (is_object($arguments[$i]) && $arguments[$i] instanceof ChainDependencyInterface) {
+                return $arguments[$i];
+            }
         }
         return null;
     }

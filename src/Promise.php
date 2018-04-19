@@ -37,8 +37,11 @@ class Promise implements PromiseWithDependenciesInterface
     public function __construct(callable $resolver, callable $canceller = null, ChainDependencyInterface $chainDependency = null)
     {
         $this->canceller = $canceller;
-        if(isset($chainDependency)) $this->chainDependency = $chainDependency;
-        else $this->chainDependency = new ChainDependency();
+        if (isset($chainDependency)) {
+            $this->chainDependency = $chainDependency;
+        } else {
+            $this->chainDependency = new ChainDependency();
+        }
         $this->call($resolver);
     }
 
@@ -52,7 +55,7 @@ class Promise implements PromiseWithDependenciesInterface
     public function then(callable $onFulfilled = null, callable $onRejected = null, callable $onProgress = null)
     {
         if (null !== $this->result) {
-            if($this->result instanceof PromiseWithDependenciesInterface) {
+            if ($this->result instanceof PromiseWithDependenciesInterface) {
                 _mergeDependencies($this->chainDependency, $this->result->chainDependency, true);
             }
             return $this->result->then($onFulfilled, $onRejected, $onProgress);

@@ -24,7 +24,9 @@ class RejectedPromise implements ExtendedPromiseInterface, CancellablePromiseInt
             throw new \InvalidArgumentException('You cannot create React\Promise\RejectedPromise with a promise. Use React\Promise\reject($promiseOrValue) instead.');
         }
 
-        if(isset($chainDependency)) $this->chainDependency = $chainDependency;
+        if (isset($chainDependency)) {
+            $this->chainDependency = $chainDependency;
+        }
 
         $this->reason = $reason;
     }
@@ -38,8 +40,6 @@ class RejectedPromise implements ExtendedPromiseInterface, CancellablePromiseInt
         try {
             return resolve($onRejected($this->reason, $this->chainDependency));
         } catch (\Throwable $exception) {
-            return new RejectedPromise($exception, $this->chainDependency);
-        } catch (\Exception $exception) {
             return new RejectedPromise($exception, $this->chainDependency);
         }
     }
