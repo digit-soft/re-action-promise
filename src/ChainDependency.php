@@ -29,7 +29,7 @@ class ChainDependency implements ChainDependencyInterface, \IteratorAggregate, \
     /**
      * Get dependency by key
      * @param string $key
-     * @param null   $defaultValue
+     * @param mixed  $defaultValue
      * @return mixed|null
      */
     public function getDependency($key, $defaultValue = null) {
@@ -214,7 +214,8 @@ class ChainDependency implements ChainDependencyInterface, \IteratorAggregate, \
      */
     public static function instanceFromArguments($arguments = []) {
         $arguments = array_values($arguments);
-        for ($i = 0; $i < count($arguments); $i++) {
+        $argumentsCount = count($arguments);
+        for ($i = 0; $i < $argumentsCount; $i++) {
             if(is_object($arguments[$i]) && $arguments[$i] instanceof ChainDependencyInterface) return $arguments[$i];
         }
         return null;

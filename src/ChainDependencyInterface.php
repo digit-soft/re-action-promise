@@ -23,7 +23,7 @@ interface ChainDependencyInterface
     /**
      * Get dependency by key
      * @param string $key
-     * @param null   $defaultValue
+     * @param mixed  $defaultValue
      * @return mixed|null
      */
     public function getDependency($key, $defaultValue = null);
