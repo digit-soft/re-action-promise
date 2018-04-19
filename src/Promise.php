@@ -4,16 +4,25 @@ namespace Reaction\Promise;
 
 use React\Promise\ExtendedPromiseInterface;
 use React\Promise\LazyPromise;
+use React\Promise\PromiseInterface;
 
+/**
+ * Class Promise
+ * @package Reaction\Promise
+ */
 class Promise implements ExtendedPromiseInterface, PromiseWithDependenciesInterface
 {
+    /** @var callable */
     private $canceller;
     /** @var FulfilledPromise|RejectedPromise */
     private $result;
 
+    /** @var callable[] */
     private $handlers = [];
+    /** @var callable[] */
     private $progressHandlers = [];
 
+    /** @var int */
     private $requiredCancelRequests = 0;
 
     /** @var ChainDependencyInterface */
@@ -22,8 +31,8 @@ class Promise implements ExtendedPromiseInterface, PromiseWithDependenciesInterf
     /**
      * Promise constructor.
      * @param callable                      $resolver
-     * @param callable|null                 $canceller
-     * @param ChainDependencyInterface|null $chainDependency
+     * @param callable                      $canceller
+     * @param ChainDependencyInterface      $chainDependency
      */
     public function __construct(callable $resolver, callable $canceller = null, ChainDependencyInterface $chainDependency = null)
     {
@@ -38,7 +47,7 @@ class Promise implements ExtendedPromiseInterface, PromiseWithDependenciesInterf
      * @param callable|null $onFulfilled
      * @param callable|null $onRejected
      * @param callable|null $onProgress
-     * @return \React\Promise\PromiseInterface|static
+     * @return PromiseWithDependenciesInterface
      */
     public function then(callable $onFulfilled = null, callable $onRejected = null, callable $onProgress = null)
     {
@@ -66,9 +75,10 @@ class Promise implements ExtendedPromiseInterface, PromiseWithDependenciesInterf
 
     /**
      * Final promise callback
-     * @param callable|null $onFulfilled
-     * @param callable|null $onRejected
-     * @param callable|null $onProgress
+     * @param callable $onFulfilled
+     * @param callable $onRejected
+     * @param callable $onProgress
+     * @return null
      */
     public function done(callable $onFulfilled = null, callable $onRejected = null, callable $onProgress = null)
     {
@@ -84,12 +94,13 @@ class Promise implements ExtendedPromiseInterface, PromiseWithDependenciesInterf
         if ($onProgress) {
             $this->progressHandlers[] = $onProgress;
         }
+        return null;
     }
 
     /**
      * Shortcut to ->then(null, $onRejected)
      * @param callable $onRejected
-     * @return Promise|ExtendedPromiseInterface|\React\Promise\PromiseInterface
+     * @return PromiseWithDependenciesInterface
      */
     public function otherwise(callable $onRejected)
     {
@@ -105,7 +116,7 @@ class Promise implements ExtendedPromiseInterface, PromiseWithDependenciesInterf
     /**
      * Always callable after resolving or rejecting
      * @param callable $onFulfilledOrRejected
-     * @return Promise|ExtendedPromiseInterface|\React\Promise\PromiseInterface
+     * @return PromiseWithDependenciesInterface
      */
     public function always(callable $onFulfilledOrRejected)
     {
@@ -123,7 +134,7 @@ class Promise implements ExtendedPromiseInterface, PromiseWithDependenciesInterf
     /**
      * Progress callback
      * @param callable $onProgress
-     * @return Promise|ExtendedPromiseInterface|\React\Promise\PromiseInterface
+     * @return PromiseWithDependenciesInterface
      */
     public function progress(callable $onProgress)
     {
@@ -185,8 +196,6 @@ class Promise implements ExtendedPromiseInterface, PromiseWithDependenciesInterf
                         $notify($onProgress($update, $self->chainDependency));
                     } catch (\Throwable $e) {
                         $notify($e);
-                    } catch (\Exception $e) {
-                        $notify($e);
                     }
                 };
             } else {
@@ -203,6 +212,9 @@ class Promise implements ExtendedPromiseInterface, PromiseWithDependenciesInterf
         };
     }
 
+    /**
+     * @param mixed|null $value
+     */
     private function resolve($value = null)
     {
         if (null !== $this->result) {
@@ -212,6 +224,9 @@ class Promise implements ExtendedPromiseInterface, PromiseWithDependenciesInterf
         $this->settle(resolve($value, $this->chainDependency));
     }
 
+    /**
+     * @param mixed|null $reason
+     */
     private function reject($reason = null)
     {
         if (null !== $this->result) {
@@ -221,6 +236,9 @@ class Promise implements ExtendedPromiseInterface, PromiseWithDependenciesInterf
         $this->settle(reject($reason, $this->chainDependency));
     }
 
+    /**
+     * @param mixed|null $update
+     */
     private function notify($update = null)
     {
         if (null !== $this->result) {
@@ -232,6 +250,9 @@ class Promise implements ExtendedPromiseInterface, PromiseWithDependenciesInterf
         }
     }
 
+    /**
+     * @param ExtendedPromiseInterface $promise
+     */
     private function settle(ExtendedPromiseInterface $promise)
     {
         $promise = $this->unwrap($promise);
@@ -257,6 +278,10 @@ class Promise implements ExtendedPromiseInterface, PromiseWithDependenciesInterf
         }
     }
 
+    /**
+     * @param PromiseInterface|ExtendedPromiseInterface $promise
+     * @return \React\Promise\FulfilledPromise|\React\Promise\Promise|\React\Promise\RejectedPromise
+     */
     private function unwrap($promise)
     {
         $promise = $this->extract($promise);
@@ -268,6 +293,10 @@ class Promise implements ExtendedPromiseInterface, PromiseWithDependenciesInterf
         return $promise;
     }
 
+    /**
+     * @param PromiseInterface|ExtendedPromiseInterface $promise
+     * @return \React\Promise\FulfilledPromise|\React\Promise\Promise|\React\Promise\RejectedPromise
+     */
     private function extract($promise)
     {
         if ($promise instanceof LazyPromise) {
@@ -277,6 +306,9 @@ class Promise implements ExtendedPromiseInterface, PromiseWithDependenciesInterf
         return $promise;
     }
 
+    /**
+     * @param callable $callback
+     */
     private function call(callable $callback)
     {
         try {
@@ -292,8 +324,6 @@ class Promise implements ExtendedPromiseInterface, PromiseWithDependenciesInterf
                 }
             );
         } catch (\Throwable $e) {
-            $this->reject($e);
-        } catch (\Exception $e) {
             $this->reject($e);
         }
     }

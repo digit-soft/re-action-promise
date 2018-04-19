@@ -39,7 +39,7 @@ function resolve($promiseOrValue = null, ChainDependencyInterface &$chainDepende
 /**
  * @param PromiseInterface|mixed $promiseOrValue
  * @param ChainDependencyInterface|null $chainDependency
- * @return RejectedPromise
+ * @return Promise|FulfilledPromise|RejectedPromise
  */
 function reject($promiseOrValue = null, ChainDependencyInterface $chainDependency = null)
 {
@@ -92,7 +92,7 @@ function race($promisesOrValues)
 
 /**
  * @param PromiseInterface[]|mixed[] $promisesOrValues
- * @return ExtendedPromiseInterface|PromiseInterface
+ * @return PromiseWithDependenciesInterface
  */
 function any($promisesOrValues)
 {
