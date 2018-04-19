@@ -14,17 +14,17 @@ class FulfilledPromise implements ExtendedPromiseInterface, CancellablePromiseIn
 {
     private $value;
 
-    /** @var ChainDependencyInterface */
-    public  $chainDependency;
+    /** @var SharedDataInterface */
+    public  $sharedData;
 
-    public function __construct($value = null, ChainDependencyInterface $chainDependency = null)
+    public function __construct($value = null, SharedDataInterface $sharedData = null)
     {
         if ($value instanceof PromiseInterface) {
             throw new \InvalidArgumentException('You cannot create React\Promise\FulfilledPromise with a promise. Use React\Promise\resolve($promiseOrValue) instead.');
         }
 
-        if (isset($chainDependency)) {
-            $this->chainDependency = $chainDependency;
+        if (isset($sharedData)) {
+            $this->sharedData = $sharedData;
         }
 
         $this->value = $value;
@@ -37,9 +37,9 @@ class FulfilledPromise implements ExtendedPromiseInterface, CancellablePromiseIn
         }
 
         try {
-            return resolve($onFulfilled($this->value, $this->chainDependency), $this->chainDependency);
+            return resolve($onFulfilled($this->value, $this->sharedData), $this->sharedData);
         } catch (\Throwable $exception) {
-            return new RejectedPromise($exception, $this->chainDependency);
+            return new RejectedPromise($exception, $this->sharedData);
         }
     }
 
@@ -49,7 +49,7 @@ class FulfilledPromise implements ExtendedPromiseInterface, CancellablePromiseIn
             return;
         }
 
-        $result = $onFulfilled($this->value, $this->chainDependency);
+        $result = $onFulfilled($this->value, $this->sharedData);
 
         if ($result instanceof ExtendedPromiseInterface) {
             $result->done();
@@ -65,7 +65,7 @@ class FulfilledPromise implements ExtendedPromiseInterface, CancellablePromiseIn
     {
         $self = $this;
         return $this->then(function ($value) use ($onFulfilledOrRejected, $self) {
-            return resolve($onFulfilledOrRejected($self->chainDependency))->then(function () use ($value) {
+            return resolve($onFulfilledOrRejected($self->sharedData))->then(function () use ($value) {
                 return $value;
             });
         });

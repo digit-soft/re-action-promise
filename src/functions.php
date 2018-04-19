@@ -8,14 +8,14 @@ use React\Promise\PromiseInterface;
 
 /**
  * @param PromiseInterface|mixed $promiseOrValue
- * @param ChainDependencyInterface|null $chainDependency
+ * @param SharedDataInterface|null $chainDependency
  * @return PromiseWithSharedDataInterface|ExtendedPromiseInterface|PromiseInterface|FulfilledPromise|Promise
  */
-function resolve($promiseOrValue = null, ChainDependencyInterface &$chainDependency = null)
+function resolve($promiseOrValue = null, SharedDataInterface &$chainDependency = null)
 {
     /** @var $promiseOrValue ExtendedPromiseInterface */
     if ($promiseOrValue instanceof PromiseWithSharedDataInterface && isset($chainDependency)) {
-        _mergeDependencies($chainDependency, $promiseOrValue->chainDependency, true);
+        _mergeSharedData($chainDependency, $promiseOrValue->sharedData, true);
         return $promiseOrValue;
     }
 
@@ -38,10 +38,10 @@ function resolve($promiseOrValue = null, ChainDependencyInterface &$chainDepende
 
 /**
  * @param PromiseInterface|mixed $promiseOrValue
- * @param ChainDependencyInterface|null $chainDependency
+ * @param SharedDataInterface|null $chainDependency
  * @return Promise|FulfilledPromise|RejectedPromise
  */
-function reject($promiseOrValue = null, ChainDependencyInterface $chainDependency = null)
+function reject($promiseOrValue = null, SharedDataInterface $chainDependency = null)
 {
     if ($promiseOrValue instanceof PromiseInterface) {
         return resolve($promiseOrValue, $chainDependency)->then(function ($value, $chainDependency = null) {
@@ -298,17 +298,18 @@ function _checkTypehint(callable $callback, $object)
 
 /**
  * Merge dependencies
- * @param ChainDependencyInterface $dep
- * @param ChainDependencyInterface $dep2
+ * @param SharedDataInterface $dep
+ * @param SharedDataInterface $dep2
  * @param bool $reassign
+ * @internal
  */
-function _mergeDependencies(&$dep, &$dep2, $reassign = false) {
+function _mergeSharedData(&$dep, &$dep2, $reassign = false) {
     if ($dep === null || $dep2 === null) {
         return;
     }
     foreach ($dep2 as $key => $value) {
         echo $key . "\n";
-        $dep->addDependency($value, $key);
+        $dep->addData($value, $key);
     }
     if ($reassign) {
         $dep2 = $dep;

@@ -15,17 +15,17 @@ class RejectedPromise implements ExtendedPromiseInterface, CancellablePromiseInt
 {
     private $reason;
 
-    /** @var ChainDependencyInterface */
-    public  $chainDependency;
+    /** @var SharedDataInterface */
+    public  $sharedData;
 
-    public function __construct($reason = null, ChainDependencyInterface $chainDependency = null)
+    public function __construct($reason = null, SharedDataInterface $sharedData = null)
     {
         if ($reason instanceof PromiseInterface) {
             throw new \InvalidArgumentException('You cannot create React\Promise\RejectedPromise with a promise. Use React\Promise\reject($promiseOrValue) instead.');
         }
 
-        if (isset($chainDependency)) {
-            $this->chainDependency = $chainDependency;
+        if (isset($sharedData)) {
+            $this->sharedData = $sharedData;
         }
 
         $this->reason = $reason;
@@ -38,9 +38,9 @@ class RejectedPromise implements ExtendedPromiseInterface, CancellablePromiseInt
         }
 
         try {
-            return resolve($onRejected($this->reason, $this->chainDependency));
+            return resolve($onRejected($this->reason, $this->sharedData));
         } catch (\Throwable $exception) {
-            return new RejectedPromise($exception, $this->chainDependency);
+            return new RejectedPromise($exception, $this->sharedData);
         }
     }
 
@@ -50,7 +50,7 @@ class RejectedPromise implements ExtendedPromiseInterface, CancellablePromiseInt
             throw UnhandledRejectionException::resolve($this->reason);
         }
 
-        $result = $onRejected($this->reason, $this->chainDependency);
+        $result = $onRejected($this->reason, $this->sharedData);
 
         if ($result instanceof self) {
             throw UnhandledRejectionException::resolve($result->reason);
@@ -74,8 +74,8 @@ class RejectedPromise implements ExtendedPromiseInterface, CancellablePromiseInt
     {
         $self = $this;
         return $this->then(null, function ($reason) use ($onFulfilledOrRejected, $self) {
-            return resolve($onFulfilledOrRejected($self->chainDependency))->then(function () use ($reason, $self) {
-                return new RejectedPromise($reason, $self->chainDependency);
+            return resolve($onFulfilledOrRejected($self->sharedData))->then(function () use ($reason, $self) {
+                return new RejectedPromise($reason, $self->sharedData);
             });
         });
     }

@@ -25,22 +25,22 @@ class Promise implements PromiseWithSharedDataInterface
     /** @var int */
     private $requiredCancelRequests = 0;
 
-    /** @var ChainDependencyInterface */
-    public  $chainDependency;
+    /** @var SharedDataInterface */
+    public  $sharedData;
 
     /**
      * Promise constructor.
-     * @param callable                      $resolver
-     * @param callable                      $canceller
-     * @param ChainDependencyInterface      $chainDependency
+     * @param callable                 $resolver
+     * @param callable                 $canceller
+     * @param SharedDataInterface      $sharedData
      */
-    public function __construct(callable $resolver, callable $canceller = null, ChainDependencyInterface $chainDependency = null)
+    public function __construct(callable $resolver, callable $canceller = null, SharedDataInterface $sharedData = null)
     {
         $this->canceller = $canceller;
-        if (isset($chainDependency)) {
-            $this->chainDependency = $chainDependency;
+        if (isset($sharedData)) {
+            $this->sharedData = $sharedData;
         } else {
-            $this->chainDependency = new ChainDependency();
+            $this->sharedData = new SharedData();
         }
         $this->call($resolver);
     }
@@ -56,13 +56,13 @@ class Promise implements PromiseWithSharedDataInterface
     {
         if (null !== $this->result) {
             if ($this->result instanceof PromiseWithSharedDataInterface) {
-                _mergeDependencies($this->chainDependency, $this->result->chainDependency, true);
+                _mergeSharedData($this->sharedData, $this->result->sharedData, true);
             }
             return $this->result->then($onFulfilled, $onRejected, $onProgress);
         }
 
         if (null === $this->canceller) {
-            return new static($this->resolver($onFulfilled, $onRejected, $onProgress), null, $this->chainDependency);
+            return new static($this->resolver($onFulfilled, $onRejected, $onProgress), null, $this->sharedData);
         }
 
         $this->requiredCancelRequests++;
@@ -73,7 +73,7 @@ class Promise implements PromiseWithSharedDataInterface
             if ($this->requiredCancelRequests <= 0) {
                 $this->cancel();
             }
-        }, $this->chainDependency);
+        }, $this->sharedData);
     }
 
     /**
@@ -196,7 +196,7 @@ class Promise implements PromiseWithSharedDataInterface
             if ($onProgress) {
                 $progressHandler = function ($update) use ($notify, $onProgress, $self) {
                     try {
-                        $notify($onProgress($update, $self->chainDependency));
+                        $notify($onProgress($update, $self->sharedData));
                     } catch (\Throwable $e) {
                         $notify($e);
                     }
@@ -224,7 +224,7 @@ class Promise implements PromiseWithSharedDataInterface
             return;
         }
 
-        $this->settle(resolve($value, $this->chainDependency));
+        $this->settle(resolve($value, $this->sharedData));
     }
 
     /**
@@ -236,7 +236,7 @@ class Promise implements PromiseWithSharedDataInterface
             return;
         }
 
-        $this->settle(reject($reason, $this->chainDependency));
+        $this->settle(reject($reason, $this->sharedData));
     }
 
     /**
@@ -249,7 +249,7 @@ class Promise implements PromiseWithSharedDataInterface
         }
 
         foreach ($this->progressHandlers as $handler) {
-            $handler($update, $this->chainDependency);
+            $handler($update, $this->sharedData);
         }
     }
 
@@ -263,7 +263,7 @@ class Promise implements PromiseWithSharedDataInterface
         if ($promise === $this) {
             $promise = new RejectedPromise(
                 new \LogicException('Cannot resolve a promise with itself.'),
-                $this->chainDependency
+                $this->sharedData
             );
         }
 
