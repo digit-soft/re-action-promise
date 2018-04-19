@@ -14,7 +14,7 @@ use React\Promise\PromiseInterface;
 function resolve($promiseOrValue = null, ChainDependencyInterface &$chainDependency = null)
 {
     /** @var $promiseOrValue ExtendedPromiseInterface */
-    if($promiseOrValue instanceof PromiseWithDependenciesInterface && isset($chainDependency)) {
+    if ($promiseOrValue instanceof PromiseWithDependenciesInterface && isset($chainDependency)) {
         _mergeDependencies($chainDependency, $promiseOrValue->chainDependency, true);
         return $promiseOrValue;
     }
