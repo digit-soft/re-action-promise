@@ -10,7 +10,7 @@ use React\Promise\PromiseInterface;
  * Class FulfilledPromise
  * @package Reaction\Promise
  */
-class FulfilledPromise implements ExtendedPromiseInterface, CancellablePromiseInterface, PromiseWithDependenciesInterface
+class FulfilledPromise implements ExtendedPromiseInterface, CancellablePromiseInterface, PromiseWithSharedDataInterface
 {
     private $value;
 

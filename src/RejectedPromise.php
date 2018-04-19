@@ -11,7 +11,7 @@ use React\Promise\UnhandledRejectionException;
  * Class RejectedPromise
  * @package Reaction\Promise
  */
-class RejectedPromise implements ExtendedPromiseInterface, CancellablePromiseInterface, PromiseWithDependenciesInterface
+class RejectedPromise implements ExtendedPromiseInterface, CancellablePromiseInterface, PromiseWithSharedDataInterface
 {
     private $reason;
 

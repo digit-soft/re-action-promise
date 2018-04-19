@@ -9,12 +9,12 @@ use React\Promise\PromiseInterface;
 /**
  * @param PromiseInterface|mixed $promiseOrValue
  * @param ChainDependencyInterface|null $chainDependency
- * @return PromiseWithDependenciesInterface|ExtendedPromiseInterface|PromiseInterface|FulfilledPromise|Promise
+ * @return PromiseWithSharedDataInterface|ExtendedPromiseInterface|PromiseInterface|FulfilledPromise|Promise
  */
 function resolve($promiseOrValue = null, ChainDependencyInterface &$chainDependency = null)
 {
     /** @var $promiseOrValue ExtendedPromiseInterface */
-    if ($promiseOrValue instanceof PromiseWithDependenciesInterface && isset($chainDependency)) {
+    if ($promiseOrValue instanceof PromiseWithSharedDataInterface && isset($chainDependency)) {
         _mergeDependencies($chainDependency, $promiseOrValue->chainDependency, true);
         return $promiseOrValue;
     }
@@ -92,7 +92,7 @@ function race($promisesOrValues)
 
 /**
  * @param PromiseInterface[]|mixed[] $promisesOrValues
- * @return PromiseWithDependenciesInterface
+ * @return PromiseWithSharedDataInterface
  */
 function any($promisesOrValues)
 {
@@ -260,6 +260,7 @@ function reduce($promisesOrValues, callable $reduceFunc, $initialValue = null)
 }
 
 // Internal functions
+
 /**
  * @param callable $callback
  * @param mixed    $object

@@ -10,7 +10,7 @@ use React\Promise\PromiseInterface;
  * Class Promise
  * @package Reaction\Promise
  */
-class Promise implements PromiseWithDependenciesInterface
+class Promise implements PromiseWithSharedDataInterface
 {
     /** @var callable|null */
     private $canceller;
@@ -50,12 +50,12 @@ class Promise implements PromiseWithDependenciesInterface
      * @param callable|null $onFulfilled
      * @param callable|null $onRejected
      * @param callable|null $onProgress
-     * @return PromiseWithDependenciesInterface
+     * @return PromiseWithSharedDataInterface
      */
     public function then(callable $onFulfilled = null, callable $onRejected = null, callable $onProgress = null)
     {
         if (null !== $this->result) {
-            if ($this->result instanceof PromiseWithDependenciesInterface) {
+            if ($this->result instanceof PromiseWithSharedDataInterface) {
                 _mergeDependencies($this->chainDependency, $this->result->chainDependency, true);
             }
             return $this->result->then($onFulfilled, $onRejected, $onProgress);
@@ -103,7 +103,7 @@ class Promise implements PromiseWithDependenciesInterface
     /**
      * Shortcut to ->then(null, $onRejected)
      * @param callable $onRejected
-     * @return PromiseWithDependenciesInterface
+     * @return PromiseWithSharedDataInterface
      */
     public function otherwise(callable $onRejected)
     {
@@ -119,7 +119,7 @@ class Promise implements PromiseWithDependenciesInterface
     /**
      * Always callable after resolving or rejecting
      * @param callable $onFulfilledOrRejected
-     * @return PromiseWithDependenciesInterface
+     * @return PromiseWithSharedDataInterface
      */
     public function always(callable $onFulfilledOrRejected)
     {
@@ -137,7 +137,7 @@ class Promise implements PromiseWithDependenciesInterface
     /**
      * Progress callback
      * @param callable $onProgress
-     * @return PromiseWithDependenciesInterface
+     * @return PromiseWithSharedDataInterface
      */
     public function progress(callable $onProgress)
     {
@@ -254,7 +254,7 @@ class Promise implements PromiseWithDependenciesInterface
     }
 
     /**
-     * @param ExtendedPromiseInterface|PromiseWithDependenciesInterface $promise
+     * @param ExtendedPromiseInterface|PromiseWithSharedDataInterface $promise
      */
     private function settle(ExtendedPromiseInterface $promise)
     {
