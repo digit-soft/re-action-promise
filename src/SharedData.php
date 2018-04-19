@@ -169,6 +169,17 @@ class SharedData implements SharedDataInterface, \IteratorAggregate, \Countable
         if ($this->type === static::TYPE_DEFINED_ONLY && !array_key_exists($key, $this->shared)) {
             return $this;
         }
+        return $this->addDataByScenario($value, $key);
+    }
+
+    /**
+     * Add data depending on scenario (internal function)
+     * @param mixed  $value
+     * @param string $key
+     * @return SharedDataInterface
+     * @internal
+     */
+    protected function addDataByScenario($value, $key) {
         switch ($this->scenario) {
             case static::SCENARIO_OVERWRITE:
                 $this->shared[$key] = $value;
@@ -179,20 +190,30 @@ class SharedData implements SharedDataInterface, \IteratorAggregate, \Countable
                 }
                 break;
             case static::SCENARIO_MERGE:
-                if (!isset($this->shared[$key])) {
-                    $this->shared[$key] = $value;
-                } elseif (isset($this->shared[$key]['#merged'])) {
-                    $this->shared[$key]['#value'][] = $value;
-                } else {
-                    $oldValue = $this->shared[$key];
-                    $this->shared[$key] = [
-                        '#merged' => true,
-                        '#value' => [$oldValue, $value]
-                    ];
-                }
+                $this->mergeDataEntry($value, $key);
                 break;
         }
         return $this;
+    }
+
+    /**
+     * Merge data entry with new one
+     * @param mixed  $value
+     * @param string $key
+     * @internal
+     */
+    protected function mergeDataEntry($value, $key) {
+        if (!isset($this->shared[$key])) {
+            $this->shared[$key] = $value;
+        } elseif (isset($this->shared[$key]['#merged'])) {
+            $this->shared[$key]['#value'][] = $value;
+        } else {
+            $oldValue = $this->shared[$key];
+            $this->shared[$key] = [
+                '#merged' => true,
+                '#value' => [$oldValue, $value]
+            ];
+        }
     }
 
     /**
