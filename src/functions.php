@@ -6,6 +6,11 @@ use React\Promise\CancellationQueue;
 use React\Promise\ExtendedPromiseInterface;
 use React\Promise\PromiseInterface;
 
+/**
+ * @param PromiseInterface|ExtendedPromiseInterface|mixed $promiseOrValue
+ * @param ChainDependencyInterface|null $chainDependency
+ * @return mixed|ExtendedPromiseInterface|PromiseInterface|FulfilledPromise|Promise
+ */
 function resolve($promiseOrValue = null, ChainDependencyInterface &$chainDependency = null)
 {
     /** @var $promiseOrValue ExtendedPromiseInterface */
@@ -31,6 +36,11 @@ function resolve($promiseOrValue = null, ChainDependencyInterface &$chainDepende
     return new FulfilledPromise($promiseOrValue, $chainDependency);
 }
 
+/**
+ * @param PromiseInterface|mixed $promiseOrValue
+ * @param ChainDependencyInterface|null $chainDependency
+ * @return RejectedPromise
+ */
 function reject($promiseOrValue = null, ChainDependencyInterface $chainDependency = null)
 {
     if ($promiseOrValue instanceof PromiseInterface) {
@@ -42,6 +52,10 @@ function reject($promiseOrValue = null, ChainDependencyInterface $chainDependenc
     return new RejectedPromise($promiseOrValue, $chainDependency);
 }
 
+/**
+ * @param PromiseInterface[]|mixed[] $promisesOrValues
+ * @return Promise
+ */
 function all($promisesOrValues)
 {
     return map($promisesOrValues, function ($val) {
@@ -49,6 +63,10 @@ function all($promisesOrValues)
     });
 }
 
+/**
+ * @param PromiseInterface[]|mixed[] $promisesOrValues
+ * @return Promise
+ */
 function race($promisesOrValues)
 {
     $cancellationQueue = new CancellationQueue();
@@ -57,7 +75,7 @@ function race($promisesOrValues)
     return new Promise(function ($resolve, $reject, $notify) use ($promisesOrValues, $cancellationQueue) {
         resolve($promisesOrValues)
             ->done(function ($array) use ($cancellationQueue, $resolve, $reject, $notify) {
-                if (!is_array($array) || !$array) {
+                if (!is_array($array) || empty($array)) {
                     $resolve();
                     return;
                 }
@@ -72,6 +90,10 @@ function race($promisesOrValues)
     }, $cancellationQueue);
 }
 
+/**
+ * @param PromiseInterface[]|mixed[] $promisesOrValues
+ * @return ExtendedPromiseInterface|PromiseInterface
+ */
 function any($promisesOrValues)
 {
     return some($promisesOrValues, 1)
@@ -80,6 +102,11 @@ function any($promisesOrValues)
         });
 }
 
+/**
+ * @param PromiseInterface[]|mixed[] $promisesOrValues
+ * @param integer $howMany
+ * @return Promise
+ */
 function some($promisesOrValues, $howMany)
 {
     $cancellationQueue = new CancellationQueue();
@@ -146,6 +173,11 @@ function some($promisesOrValues, $howMany)
     }, $cancellationQueue);
 }
 
+/**
+ * @param PromiseInterface[]|mixed[] $promisesOrValues
+ * @param callable $mapFunc
+ * @return Promise
+ */
 function map($promisesOrValues, callable $mapFunc)
 {
     $cancellationQueue = new CancellationQueue();
@@ -154,7 +186,7 @@ function map($promisesOrValues, callable $mapFunc)
     return new Promise(function ($resolve, $reject, $notify) use ($promisesOrValues, $mapFunc, $cancellationQueue) {
         resolve($promisesOrValues)
             ->done(function ($array) use ($mapFunc, $cancellationQueue, $resolve, $reject, $notify) {
-                if (!is_array($array) || !$array) {
+                if (!is_array($array) || empty($array)) {
                     $resolve([]);
                     return;
                 }
@@ -184,6 +216,12 @@ function map($promisesOrValues, callable $mapFunc)
     }, $cancellationQueue);
 }
 
+/**
+ * @param PromiseInterface[]|mixed[] $promisesOrValues
+ * @param callable $reduceFunc
+ * @param mixed|null $initialValue
+ * @return Promise
+ */
 function reduce($promisesOrValues, callable $reduceFunc, $initialValue = null)
 {
     $cancellationQueue = new CancellationQueue();
@@ -203,7 +241,7 @@ function reduce($promisesOrValues, callable $reduceFunc, $initialValue = null)
                 // delegates to the supplied.
                 $wrappedReduceFunc = function ($current, $val) use ($reduceFunc, $cancellationQueue, $total, &$i) {
                     $cancellationQueue->enqueue($val);
-
+                    /** @var PromiseInterface $current */
                     return $current
                         ->then(function ($c) use ($reduceFunc, $total, &$i, $val) {
                             return resolve($val)
@@ -222,6 +260,12 @@ function reduce($promisesOrValues, callable $reduceFunc, $initialValue = null)
 }
 
 // Internal functions
+/**
+ * @param callable $callback
+ * @param mixed    $object
+ * @return bool
+ * @throws \ReflectionException
+ */
 function _checkTypehint(callable $callback, $object)
 {
     if (!is_object($object)) {
