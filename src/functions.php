@@ -1,5 +1,5 @@
 <?php
-//TODO: Rename $chainDependency to $sharedData
+
 namespace Reaction\Promise;
 
 use React\Promise\CancellationQueue;
@@ -8,14 +8,14 @@ use React\Promise\PromiseInterface;
 
 /**
  * @param PromiseInterface|mixed $promiseOrValue
- * @param SharedDataInterface|null $chainDependency
+ * @param SharedDataInterface|null $sharedData
  * @return PromiseWithSharedDataInterface|ExtendedPromiseInterface|PromiseInterface|FulfilledPromise|Promise
  */
-function resolve($promiseOrValue = null, SharedDataInterface &$chainDependency = null)
+function resolve($promiseOrValue = null, SharedDataInterface &$sharedData = null)
 {
     /** @var $promiseOrValue ExtendedPromiseInterface */
-    if ($promiseOrValue instanceof PromiseWithSharedDataInterface && isset($chainDependency)) {
-        _mergeSharedData($chainDependency, $promiseOrValue->sharedData, true);
+    if ($promiseOrValue instanceof PromiseWithSharedDataInterface && isset($sharedData)) {
+        _mergeSharedData($sharedData, $promiseOrValue->sharedData, true);
         return $promiseOrValue;
     }
 
@@ -29,27 +29,27 @@ function resolve($promiseOrValue = null, SharedDataInterface &$chainDependency =
 
         return new Promise(function ($resolve, $reject, $notify) use ($promiseOrValue) {
             $promiseOrValue->then($resolve, $reject, $notify);
-        }, $canceller, $chainDependency);
+        }, $canceller, $sharedData);
     }
 
     /** @var $promiseOrValue mixed */
-    return new FulfilledPromise($promiseOrValue, $chainDependency);
+    return new FulfilledPromise($promiseOrValue, $sharedData);
 }
 
 /**
  * @param PromiseInterface|mixed $promiseOrValue
- * @param SharedDataInterface|null $chainDependency
+ * @param SharedDataInterface|null $sharedData
  * @return Promise|FulfilledPromise|RejectedPromise
  */
-function reject($promiseOrValue = null, SharedDataInterface $chainDependency = null)
+function reject($promiseOrValue = null, SharedDataInterface $sharedData = null)
 {
     if ($promiseOrValue instanceof PromiseInterface) {
-        return resolve($promiseOrValue, $chainDependency)->then(function ($value, $chainDependency = null) {
-            return new RejectedPromise($value, $chainDependency);
+        return resolve($promiseOrValue, $sharedData)->then(function ($value, $sharedData = null) {
+            return new RejectedPromise($value, $sharedData);
         });
     }
 
-    return new RejectedPromise($promiseOrValue, $chainDependency);
+    return new RejectedPromise($promiseOrValue, $sharedData);
 }
 
 /**
@@ -266,6 +266,7 @@ function reduce($promisesOrValues, callable $reduceFunc, $initialValue = null)
  * @param mixed    $object
  * @return bool
  * @throws \ReflectionException
+ * @internal
  */
 function _checkTypehint(callable $callback, $object)
 {
@@ -297,21 +298,21 @@ function _checkTypehint(callable $callback, $object)
 }
 
 /**
- * Merge dependencies
- * @param SharedDataInterface $dep
- * @param SharedDataInterface $dep2
+ * Merge shared data
+ * @param SharedDataInterface $data
+ * @param SharedDataInterface $data2
  * @param bool $reassign
  * @internal
  */
-function _mergeSharedData(&$dep, &$dep2, $reassign = false) {
-    if ($dep === null || $dep2 === null) {
+function _mergeSharedData(&$data, &$data2, $reassign = false) {
+    if ($data === null || $data2 === null) {
         return;
     }
-    foreach ($dep2 as $key => $value) {
+    foreach ($data2 as $key => $value) {
         echo $key . "\n";
-        $dep->addData($value, $key);
+        $data->addData($value, $key);
     }
     if ($reassign) {
-        $dep2 = $dep;
+        $data2 = $data;
     }
 }
