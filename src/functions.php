@@ -1,5 +1,5 @@
 <?php
-
+//TODO: Rename $chainDependency to $sharedData
 namespace Reaction\Promise;
 
 use React\Promise\CancellationQueue;
