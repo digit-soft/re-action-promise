@@ -3,7 +3,6 @@
 namespace Reaction\Promise;
 
 use React\Promise\CancellablePromiseInterface;
-use React\Promise\ExtendedPromiseInterface;
 use React\Promise\PromiseInterface;
 use React\Promise\UnhandledRejectionException;
 
