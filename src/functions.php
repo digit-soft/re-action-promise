@@ -3,13 +3,12 @@
 namespace Reaction\Promise;
 
 use React\Promise\CancellationQueue;
-use React\Promise\ExtendedPromiseInterface;
 use React\Promise\PromiseInterface;
 
 /**
  * @param PromiseInterface|mixed $promiseOrValue
  * @param SharedDataInterface|null $sharedData
- * @return PromiseWithSharedDataInterface|ExtendedPromiseInterface|PromiseInterface|FulfilledPromise|Promise
+ * @return ExtendedPromiseInterface
  */
 function resolve($promiseOrValue = null, SharedDataInterface &$sharedData = null)
 {
@@ -39,7 +38,7 @@ function resolve($promiseOrValue = null, SharedDataInterface &$sharedData = null
 /**
  * @param PromiseInterface|mixed $promiseOrValue
  * @param SharedDataInterface|null $sharedData
- * @return Promise|FulfilledPromise|RejectedPromise
+ * @return ExtendedPromiseInterface
  */
 function reject($promiseOrValue = null, SharedDataInterface $sharedData = null)
 {
@@ -54,7 +53,7 @@ function reject($promiseOrValue = null, SharedDataInterface $sharedData = null)
 
 /**
  * @param PromiseInterface[]|mixed[] $promisesOrValues
- * @return Promise
+ * @return ExtendedPromiseInterface
  */
 function all($promisesOrValues)
 {
@@ -65,7 +64,7 @@ function all($promisesOrValues)
 
 /**
  * @param PromiseInterface[]|mixed[] $promisesOrValues
- * @return Promise
+ * @return ExtendedPromiseInterface
  */
 function race($promisesOrValues)
 {
@@ -92,7 +91,7 @@ function race($promisesOrValues)
 
 /**
  * @param PromiseInterface[]|mixed[] $promisesOrValues
- * @return PromiseWithSharedDataInterface
+ * @return ExtendedPromiseInterface
  */
 function any($promisesOrValues)
 {
@@ -105,7 +104,7 @@ function any($promisesOrValues)
 /**
  * @param PromiseInterface[]|mixed[] $promisesOrValues
  * @param integer $howMany
- * @return Promise
+ * @return ExtendedPromiseInterface
  */
 function some($promisesOrValues, $howMany)
 {
@@ -176,7 +175,7 @@ function some($promisesOrValues, $howMany)
 /**
  * @param PromiseInterface[]|mixed[] $promisesOrValues
  * @param callable $mapFunc
- * @return Promise
+ * @return ExtendedPromiseInterface
  */
 function map($promisesOrValues, callable $mapFunc)
 {
@@ -220,7 +219,7 @@ function map($promisesOrValues, callable $mapFunc)
  * @param PromiseInterface[]|mixed[] $promisesOrValues
  * @param callable $reduceFunc
  * @param mixed|null $initialValue
- * @return Promise
+ * @return ExtendedPromiseInterface
  */
 function reduce($promisesOrValues, callable $reduceFunc, $initialValue = null)
 {
