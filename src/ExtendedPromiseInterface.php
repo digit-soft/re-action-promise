@@ -1,12 +1,6 @@
 <?php
-/**
- * Created by coder1.
- * Date: 02.05.18
- * Time: 14:28
- */
 
 namespace Reaction\Promise;
-
 
 interface ExtendedPromiseInterface extends \React\Promise\ExtendedPromiseInterface
 {
@@ -17,4 +11,16 @@ interface ExtendedPromiseInterface extends \React\Promise\ExtendedPromiseInterfa
      * @return ExtendedPromiseInterface
      */
     public function then(callable $onFulfilled = null, callable $onRejected = null, callable $onProgress = null);
+
+    /**
+     * @param callable $onRejected
+     * @return ExtendedPromiseInterface
+     */
+    public function otherwise(callable $onRejected);
+
+    /**
+     * @param callable $onFulfilledOrRejected
+     * @return ExtendedPromiseInterface
+     */
+    public function always(callable $onFulfilledOrRejected);
 }
