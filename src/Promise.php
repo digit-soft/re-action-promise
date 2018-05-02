@@ -2,7 +2,6 @@
 
 namespace Reaction\Promise;
 
-use React\Promise\ExtendedPromiseInterface;
 use React\Promise\LazyPromise;
 use React\Promise\PromiseInterface;
 
