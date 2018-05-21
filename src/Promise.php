@@ -2,46 +2,40 @@
 
 namespace Reaction\Promise;
 
-use React\Promise\LazyPromise;
-use React\Promise\PromiseInterface;
+use React\Promise\CancellablePromiseInterface;
 
 /**
  * Class Promise
  * @package Reaction\Promise
  */
-class Promise implements PromiseWithSharedDataInterface
+class Promise implements ExtendedPromiseInterface, CancellablePromiseInterface
 {
     /** @var callable|null */
     protected $canceller;
-    /** @var FulfilledPromise|RejectedPromise */
+    /** @var ExtendedPromiseInterface */
     protected $result;
-
-    /** @var callable[] */
+    /** @var array */
     protected $handlers = [];
-    /** @var callable[] */
+    /** @var array */
     protected $progressHandlers = [];
-
     /** @var int */
     protected $requiredCancelRequests = 0;
 
-    /** @var SharedDataInterface */
-    public  $sharedData;
-
     /**
      * Promise constructor.
-     * @param callable                 $resolver
-     * @param callable                 $canceller
-     * @param SharedDataInterface      $sharedData
+     * @param callable      $resolver
+     * @param callable|null $canceller
      */
-    public function __construct(callable $resolver, callable $canceller = null, SharedDataInterface $sharedData = null)
+    public function __construct(callable $resolver, callable $canceller = null)
     {
         $this->canceller = $canceller;
-        if (isset($sharedData)) {
-            $this->sharedData = $sharedData;
-        } else {
-            $this->sharedData = new SharedData();
-        }
-        $this->call($resolver);
+
+        // Explicitly overwrite arguments with null values before invoking
+        // resolver function. This ensure that these arguments do not show up
+        // in the stack trace in PHP 7+ only.
+        $cb = $resolver;
+        $resolver = $canceller = null;
+        $this->call($cb);
     }
 
     /**
@@ -49,30 +43,27 @@ class Promise implements PromiseWithSharedDataInterface
      * @param callable|null $onFulfilled
      * @param callable|null $onRejected
      * @param callable|null $onProgress
-     * @return PromiseWithSharedDataInterface
+     * @return ExtendedPromiseInterface
      */
     public function then(callable $onFulfilled = null, callable $onRejected = null, callable $onProgress = null)
     {
         if (null !== $this->result) {
-            if ($this->result instanceof PromiseWithSharedDataInterface) {
-                _mergeSharedData($this->sharedData, $this->result->sharedData, true);
-            }
             return $this->result->then($onFulfilled, $onRejected, $onProgress);
         }
 
         if (null === $this->canceller) {
-            return new static($this->resolver($onFulfilled, $onRejected, $onProgress), null, $this->sharedData);
+            return new static($this->resolver($onFulfilled, $onRejected, $onProgress));
         }
 
-        $this->requiredCancelRequests++;
+        // keep a reference to this promise instance for the static canceller function.
+        // see also parentCancellerFunction() for more details.
+        $parent = $this;
+        ++$parent->requiredCancelRequests;
 
-        return new static($this->resolver($onFulfilled, $onRejected, $onProgress), function () {
-            $this->requiredCancelRequests--;
-
-            if ($this->requiredCancelRequests <= 0) {
-                $this->cancel();
-            }
-        }, $this->sharedData);
+        return new static(
+            $this->resolver($onFulfilled, $onRejected, $onProgress),
+            self::parentCancellerFunction($parent)
+        );
     }
 
     /**
@@ -80,29 +71,27 @@ class Promise implements PromiseWithSharedDataInterface
      * @param callable $onFulfilled
      * @param callable $onRejected
      * @param callable $onProgress
-     * @return null
      */
     public function done(callable $onFulfilled = null, callable $onRejected = null, callable $onProgress = null)
     {
         if (null !== $this->result) {
-            return $this->result->done($onFulfilled, $onRejected, $onProgress);
+            $this->result->done($onFulfilled, $onRejected, $onProgress);
+            return;
         }
 
         $this->handlers[] = function (ExtendedPromiseInterface $promise) use ($onFulfilled, $onRejected) {
-            $promise
-                ->done($onFulfilled, $onRejected);
+            $promise->done($onFulfilled, $onRejected);
         };
 
         if ($onProgress) {
             $this->progressHandlers[] = $onProgress;
         }
-        return null;
     }
 
     /**
      * Shortcut to ->then(null, $onRejected)
      * @param callable $onRejected
-     * @return PromiseWithSharedDataInterface
+     * @return ExtendedPromiseInterface
      */
     public function otherwise(callable $onRejected)
     {
@@ -118,7 +107,7 @@ class Promise implements PromiseWithSharedDataInterface
     /**
      * Always callable after resolving or rejecting
      * @param callable $onFulfilledOrRejected
-     * @return PromiseWithSharedDataInterface
+     * @return ExtendedPromiseInterface
      */
     public function always(callable $onFulfilledOrRejected)
     {
@@ -136,7 +125,7 @@ class Promise implements PromiseWithSharedDataInterface
     /**
      * Progress callback
      * @param callable $onProgress
-     * @return PromiseWithSharedDataInterface
+     * @return ExtendedPromiseInterface
      */
     public function progress(callable $onProgress)
     {
@@ -190,12 +179,11 @@ class Promise implements PromiseWithSharedDataInterface
      */
     protected function resolver(callable $onFulfilled = null, callable $onRejected = null, callable $onProgress = null)
     {
-        $self = $this;
-        return function ($resolve, $reject, $notify) use ($onFulfilled, $onRejected, $onProgress, $self) {
+        return function ($resolve, $reject, $notify) use ($onFulfilled, $onRejected, $onProgress) {
             if ($onProgress) {
-                $progressHandler = function ($update) use ($notify, $onProgress, $self) {
+                $progressHandler = function ($update) use ($notify, $onProgress) {
                     try {
-                        $notify($onProgress($update, $self->sharedData));
+                        $notify($onProgress($update));
                     } catch (\Throwable $e) {
                         $notify($e);
                     }
@@ -215,19 +203,7 @@ class Promise implements PromiseWithSharedDataInterface
     }
 
     /**
-     * @param mixed|null $value
-     */
-    protected function resolve($value = null)
-    {
-        if (null !== $this->result) {
-            return;
-        }
-
-        $this->settle(resolve($value, $this->sharedData));
-    }
-
-    /**
-     * @param mixed|null $reason
+     * @param mixed $reason
      */
     protected function reject($reason = null)
     {
@@ -235,25 +211,11 @@ class Promise implements PromiseWithSharedDataInterface
             return;
         }
 
-        $this->settle(reject($reason, $this->sharedData));
+        $this->settle(reject($reason));
     }
 
     /**
-     * @param mixed|null $update
-     */
-    protected function notify($update = null)
-    {
-        if (null !== $this->result) {
-            return;
-        }
-
-        foreach ($this->progressHandlers as $handler) {
-            $handler($update, $this->sharedData);
-        }
-    }
-
-    /**
-     * @param ExtendedPromiseInterface|PromiseWithSharedDataInterface $promise
+     * @param ExtendedPromiseInterface $promise
      */
     protected function settle(ExtendedPromiseInterface $promise)
     {
@@ -261,13 +223,14 @@ class Promise implements PromiseWithSharedDataInterface
 
         if ($promise === $this) {
             $promise = new RejectedPromise(
-                new \LogicException('Cannot resolve a promise with itself.'),
-                $this->sharedData
+                new \LogicException('Cannot resolve a promise with itself.')
             );
         }
 
         if ($promise instanceof self) {
             $promise->requiredCancelRequests++;
+        } else {
+            $this->canceller = null;
         }
 
         $handlers = $this->handlers;
@@ -281,8 +244,8 @@ class Promise implements PromiseWithSharedDataInterface
     }
 
     /**
-     * @param PromiseInterface|ExtendedPromiseInterface $promise
-     * @return \React\Promise\FulfilledPromise|\React\Promise\Promise|\React\Promise\RejectedPromise
+     * @param $promise
+     * @return CancellablePromiseInterface|ExtendedPromiseInterface
      */
     protected function unwrap($promise)
     {
@@ -296,8 +259,8 @@ class Promise implements PromiseWithSharedDataInterface
     }
 
     /**
-     * @param PromiseInterface|ExtendedPromiseInterface $promise
-     * @return \React\Promise\FulfilledPromise|\React\Promise\Promise|\React\Promise\RejectedPromise
+     * @param $promise
+     * @return CancellablePromiseInterface|ExtendedPromiseInterface
      */
     protected function extract($promise)
     {
@@ -309,24 +272,149 @@ class Promise implements PromiseWithSharedDataInterface
     }
 
     /**
-     * @param callable $callback
+     * @param callable $cb
      */
-    protected function call(callable $callback)
+    protected function call(callable $cb)
     {
+        // Explicitly overwrite argument with null value. This ensure that this
+        // argument does not show up in the stack trace in PHP 7+ only.
+        $callback = $cb;
+        $cb = null;
+
+        // Use reflection to inspect number of arguments expected by this callback.
+        // We did some careful benchmarking here: Using reflection to avoid unneeded
+        // function arguments is actually faster than blindly passing them.
+        // Also, this helps avoiding unnecessary function arguments in the call stack
+        // if the callback creates an Exception (creating garbage cycles).
+        if (is_array($callback)) {
+            $ref = new \ReflectionMethod($callback[0], $callback[1]);
+        } elseif (is_object($callback) && !$callback instanceof \Closure) {
+            $ref = new \ReflectionMethod($callback, '__invoke');
+        } else {
+            $ref = new \ReflectionFunction($callback);
+        }
+        $args = $ref->getNumberOfParameters();
+
         try {
-            $callback(
-                function ($value = null) {
-                    $this->resolve($value);
-                },
-                function ($reason = null) {
-                    $this->reject($reason);
-                },
-                function ($update = null) {
-                    $this->notify($update);
-                }
-            );
+            if ($args === 0) {
+                $callback();
+            } else {
+                // keep a reference to this promise instance for the static resolve/reject functions.
+                // see also resolveFunction() and rejectFunction() for more details.
+                $target =& $this;
+
+                $callback(
+                    self::resolveFunction($target),
+                    self::rejectFunction($target),
+                    self::notifyFunction($this->progressHandlers)
+                );
+            }
         } catch (\Throwable $e) {
+            $target = null;
             $this->reject($e);
         }
+    }
+
+    /**
+     * Creates a static parent canceller callback that is not bound to a promise instance.
+     *
+     * Moving the closure creation to a static method allows us to create a
+     * callback that is not bound to a promise instance. By passing the target
+     * promise instance by reference, we can still execute its cancellation logic
+     * and still clear this reference after invocation (canceller can only ever
+     * be called once). This helps avoiding garbage cycles if the parent canceller
+     * creates an Exception.
+     *
+     * These assumptions are covered by the test suite, so if you ever feel like
+     * refactoring this, go ahead, any alternative suggestions are welcome!
+     *
+     * @param ExtendedPromiseInterface $parent
+     * @return callable
+     */
+    protected static function parentCancellerFunction(self &$parent)
+    {
+        return function () use (&$parent) {
+            --$parent->requiredCancelRequests;
+
+            if ($parent->requiredCancelRequests <= 0) {
+                $parent->cancel();
+            }
+
+            $parent = null;
+        };
+    }
+
+    /**
+     * Creates a static resolver callback that is not bound to a promise instance.
+     *
+     * Moving the closure creation to a static method allows us to create a
+     * callback that is not bound to a promise instance. By passing the target
+     * promise instance by reference, we can still execute its resolving logic
+     * and still clear this reference when settling the promise. This helps
+     * avoiding garbage cycles if any callback creates an Exception.
+     *
+     * These assumptions are covered by the test suite, so if you ever feel like
+     * refactoring this, go ahead, any alternative suggestions are welcome!
+     *
+     * @param ExtendedPromiseInterface $target
+     * @return callable
+     */
+    protected static function resolveFunction(self &$target)
+    {
+        return function ($value = null) use (&$target) {
+            if ($target !== null) {
+                $target->settle(resolve($value));
+                $target = null;
+            }
+        };
+    }
+
+    /**
+     * Creates a static rejection callback that is not bound to a promise instance.
+     *
+     * Moving the closure creation to a static method allows us to create a
+     * callback that is not bound to a promise instance. By passing the target
+     * promise instance by reference, we can still execute its rejection logic
+     * and still clear this reference when settling the promise. This helps
+     * avoiding garbage cycles if any callback creates an Exception.
+     *
+     * These assumptions are covered by the test suite, so if you ever feel like
+     * refactoring this, go ahead, any alternative suggestions are welcome!
+     *
+     * @param ExtendedPromiseInterface $target
+     * @return callable
+     */
+    protected static function rejectFunction(self &$target)
+    {
+        return function ($reason = null) use (&$target) {
+            if ($target !== null) {
+                $target->reject($reason);
+                $target = null;
+            }
+        };
+    }
+
+    /**
+     * Creates a static progress callback that is not bound to a promise instance.
+     *
+     * Moving the closure creation to a static method allows us to create a
+     * callback that is not bound to a promise instance. By passing its progress
+     * handlers by reference, we can still execute them when requested and still
+     * clear this reference when settling the promise. This helps avoiding
+     * garbage cycles if any callback creates an Exception.
+     *
+     * These assumptions are covered by the test suite, so if you ever feel like
+     * refactoring this, go ahead, any alternative suggestions are welcome!
+     *
+     * @param array $progressHandlers
+     * @return callable
+     */
+    protected static function notifyFunction(&$progressHandlers)
+    {
+        return function ($update = null) use (&$progressHandlers) {
+            foreach ($progressHandlers as $handler) {
+                $handler($update);
+            }
+        };
     }
 }
