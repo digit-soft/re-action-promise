@@ -2,6 +2,10 @@
 
 namespace Reaction\Promise;
 
+/**
+ * Interface ExtendedPromiseInterface
+ * @package Reaction\Promise
+ */
 interface ExtendedPromiseInterface extends \React\Promise\ExtendedPromiseInterface
 {
     /**
@@ -23,4 +27,11 @@ interface ExtendedPromiseInterface extends \React\Promise\ExtendedPromiseInterfa
      * @return ExtendedPromiseInterface
      */
     public function always(callable $onFulfilledOrRejected);
+
+    /**
+     * @param callable $onProgress
+     * @return ExtendedPromiseInterface
+     * @deprecated 2.6.0 Progress support is deprecated and should not be used anymore.
+     */
+    public function progress(callable $onProgress);
 }
