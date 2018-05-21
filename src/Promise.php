@@ -12,17 +12,17 @@ use React\Promise\PromiseInterface;
 class Promise implements PromiseWithSharedDataInterface
 {
     /** @var callable|null */
-    private $canceller;
+    protected $canceller;
     /** @var FulfilledPromise|RejectedPromise */
-    private $result;
+    protected $result;
 
     /** @var callable[] */
-    private $handlers = [];
+    protected $handlers = [];
     /** @var callable[] */
-    private $progressHandlers = [];
+    protected $progressHandlers = [];
 
     /** @var int */
-    private $requiredCancelRequests = 0;
+    protected $requiredCancelRequests = 0;
 
     /** @var SharedDataInterface */
     public  $sharedData;
@@ -188,7 +188,7 @@ class Promise implements PromiseWithSharedDataInterface
      * @param callable|null $onProgress
      * @return \Closure
      */
-    private function resolver(callable $onFulfilled = null, callable $onRejected = null, callable $onProgress = null)
+    protected function resolver(callable $onFulfilled = null, callable $onRejected = null, callable $onProgress = null)
     {
         $self = $this;
         return function ($resolve, $reject, $notify) use ($onFulfilled, $onRejected, $onProgress, $self) {
@@ -217,7 +217,7 @@ class Promise implements PromiseWithSharedDataInterface
     /**
      * @param mixed|null $value
      */
-    private function resolve($value = null)
+    protected function resolve($value = null)
     {
         if (null !== $this->result) {
             return;
@@ -229,7 +229,7 @@ class Promise implements PromiseWithSharedDataInterface
     /**
      * @param mixed|null $reason
      */
-    private function reject($reason = null)
+    protected function reject($reason = null)
     {
         if (null !== $this->result) {
             return;
@@ -241,7 +241,7 @@ class Promise implements PromiseWithSharedDataInterface
     /**
      * @param mixed|null $update
      */
-    private function notify($update = null)
+    protected function notify($update = null)
     {
         if (null !== $this->result) {
             return;
@@ -255,7 +255,7 @@ class Promise implements PromiseWithSharedDataInterface
     /**
      * @param ExtendedPromiseInterface|PromiseWithSharedDataInterface $promise
      */
-    private function settle(ExtendedPromiseInterface $promise)
+    protected function settle(ExtendedPromiseInterface $promise)
     {
         $promise = $this->unwrap($promise);
 
@@ -284,7 +284,7 @@ class Promise implements PromiseWithSharedDataInterface
      * @param PromiseInterface|ExtendedPromiseInterface $promise
      * @return \React\Promise\FulfilledPromise|\React\Promise\Promise|\React\Promise\RejectedPromise
      */
-    private function unwrap($promise)
+    protected function unwrap($promise)
     {
         $promise = $this->extract($promise);
 
@@ -299,7 +299,7 @@ class Promise implements PromiseWithSharedDataInterface
      * @param PromiseInterface|ExtendedPromiseInterface $promise
      * @return \React\Promise\FulfilledPromise|\React\Promise\Promise|\React\Promise\RejectedPromise
      */
-    private function extract($promise)
+    protected function extract($promise)
     {
         if ($promise instanceof LazyPromise) {
             $promise = $promise->promise();
@@ -311,7 +311,7 @@ class Promise implements PromiseWithSharedDataInterface
     /**
      * @param callable $callback
      */
-    private function call(callable $callback)
+    protected function call(callable $callback)
     {
         try {
             $callback(
