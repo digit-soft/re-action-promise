@@ -10,7 +10,9 @@ use React\Promise\CancellablePromiseInterface;
  */
 class LazyPromise implements ExtendedPromiseInterface, CancellablePromiseInterface
 {
+    /** @var callable Promise factory callback */
     protected $factory;
+    /** @var ExtendedPromiseInterface Generated promise */
     protected $promise;
 
     /**

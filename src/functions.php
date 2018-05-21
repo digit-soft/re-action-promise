@@ -264,7 +264,6 @@ function reduce($promisesOrValues, callable $reduceFunc, $initialValue = null)
  * @param callable $callback
  * @param mixed    $object
  * @return bool
- * @throws \ReflectionException
  * @internal
  */
 function _checkTypehint(callable $callback, $object)

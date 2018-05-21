@@ -10,26 +10,31 @@ use React\Promise\UnhandledRejectionException;
  * Class RejectedPromise
  * @package Reaction\Promise
  */
-class RejectedPromise implements ExtendedPromiseInterface, CancellablePromiseInterface, PromiseWithSharedDataInterface
+class RejectedPromise implements ExtendedPromiseInterface, CancellablePromiseInterface
 {
-    private $reason;
+    /** @var \Throwable|mixed */
+    protected $reason;
 
-    /** @var SharedDataInterface */
-    public  $sharedData;
-
-    public function __construct($reason = null, SharedDataInterface $sharedData = null)
+    /**
+     * RejectedPromise constructor.
+     * @param \Throwable|mixed $reason
+     */
+    public function __construct($reason = null)
     {
         if ($reason instanceof PromiseInterface) {
-            throw new \InvalidArgumentException('You cannot create React\Promise\RejectedPromise with a promise. Use React\Promise\reject($promiseOrValue) instead.');
-        }
-
-        if (isset($sharedData)) {
-            $this->sharedData = $sharedData;
+            throw new \InvalidArgumentException('You cannot create Reaction\Promise\RejectedPromise with a promise. Use Reaction\Promise\reject($promiseOrValue) instead.');
         }
 
         $this->reason = $reason;
     }
 
+    /**
+     * Transform promise
+     * @param callable|null $onFulfilled
+     * @param callable|null $onRejected
+     * @param callable|null $onProgress
+     * @return ExtendedPromiseInterface
+     */
     public function then(callable $onFulfilled = null, callable $onRejected = null, callable $onProgress = null)
     {
         if (null === $onRejected) {
@@ -37,19 +42,24 @@ class RejectedPromise implements ExtendedPromiseInterface, CancellablePromiseInt
         }
 
         try {
-            return resolve($onRejected($this->reason, $this->sharedData));
+            return resolve($onRejected($this->reason));
         } catch (\Throwable $exception) {
-            return new RejectedPromise($exception, $this->sharedData);
+            return new static($exception);
         }
     }
 
+    /**
+     * @param callable|null $onFulfilled
+     * @param callable|null $onRejected
+     * @param callable|null $onProgress
+     */
     public function done(callable $onFulfilled = null, callable $onRejected = null, callable $onProgress = null)
     {
         if (null === $onRejected) {
             throw UnhandledRejectionException::resolve($this->reason);
         }
 
-        $result = $onRejected($this->reason, $this->sharedData);
+        $result = $onRejected($this->reason);
 
         if ($result instanceof self) {
             throw UnhandledRejectionException::resolve($result->reason);
@@ -60,6 +70,11 @@ class RejectedPromise implements ExtendedPromiseInterface, CancellablePromiseInt
         }
     }
 
+    /**
+     * Shortcut to ::then(null, $onRejected)
+     * @param callable $onRejected
+     * @return ExtendedPromiseInterface
+     */
     public function otherwise(callable $onRejected)
     {
         if (!_checkTypehint($onRejected, $this->reason)) {
@@ -69,21 +84,33 @@ class RejectedPromise implements ExtendedPromiseInterface, CancellablePromiseInt
         return $this->then(null, $onRejected);
     }
 
+    /**
+     * Always executable callback
+     * @param callable $onFulfilledOrRejected
+     * @return ExtendedPromiseInterface
+     */
     public function always(callable $onFulfilledOrRejected)
     {
-        $self = $this;
-        return $this->then(null, function ($reason) use ($onFulfilledOrRejected, $self) {
-            return resolve($onFulfilledOrRejected($self->sharedData))->then(function () use ($reason, $self) {
-                return new RejectedPromise($reason, $self->sharedData);
+        return $this->then(null, function ($reason) use ($onFulfilledOrRejected) {
+            return resolve($onFulfilledOrRejected())->then(function () use ($reason) {
+                return new static($reason);
             });
         });
     }
 
+    /**
+     * Dummy method for compatibility
+     * @param callable $onProgress
+     * @return ExtendedPromiseInterface
+     */
     public function progress(callable $onProgress)
     {
         return $this;
     }
 
+    /**
+     * Dummy method for compatibility
+     */
     public function cancel()
     {
     }
