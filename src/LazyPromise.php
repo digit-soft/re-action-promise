@@ -115,7 +115,7 @@ class LazyPromise implements ExtendedPromiseInterface, CancellablePromiseInterfa
      * @param callable|null $onFulfilled
      * @param callable|null $onRejected
      * @param callable|null $onProgress
-     * @return ExtendedPromiseInterface
+     * @return LazyPromise
      */
     public function thenLazy(callable $onFulfilled = null, callable $onRejected = null, callable $onProgress = null)
     {
@@ -125,7 +125,7 @@ class LazyPromise implements ExtendedPromiseInterface, CancellablePromiseInterfa
     /**
      * Lazy variant of ::always()
      * @param callable $onFulfilledOrRejected
-     * @return ExtendedPromiseInterface
+     * @return LazyPromise
      * @see ExtendedPromiseInterface::always()
      */
     public function alwaysLazy(callable $onFulfilledOrRejected)
@@ -136,7 +136,7 @@ class LazyPromise implements ExtendedPromiseInterface, CancellablePromiseInterfa
     /**
      * Lazy variant of ::otherwise()
      * @param callable $onRejected
-     * @return ExtendedPromiseInterface
+     * @return LazyPromise
      */
     public function otherwiseLazy(callable $onRejected)
     {
@@ -147,7 +147,7 @@ class LazyPromise implements ExtendedPromiseInterface, CancellablePromiseInterfa
      * Add lazy method to chain
      * @param string $method
      * @param array  $arguments
-     * @return ExtendedPromiseInterface
+     * @return LazyPromise|ExtendedPromiseInterface
      */
     protected function chainAdd($method, $arguments = [])
     {
