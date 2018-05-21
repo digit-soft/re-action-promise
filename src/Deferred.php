@@ -27,7 +27,7 @@ class Deferred implements PromisorInterface
 
     /**
      * Create promise if needed
-     * @return PromiseWithSharedDataInterface
+     * @return ExtendedPromiseInterface
      */
     public function promise()
     {
