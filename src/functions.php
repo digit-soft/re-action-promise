@@ -26,13 +26,19 @@ function resolve($promiseOrValue = null, SharedDataInterface &$sharedData = null
             $canceller = [$promiseOrValue, 'cancel'];
         }
 
-        return new Promise(function ($resolve, $reject, $notify) use ($promiseOrValue) {
-            $promiseOrValue->then($resolve, $reject, $notify);
-        }, $canceller, $sharedData);
+        return isset($sharedData) ?
+            new PromiseWithSD(function($resolve, $reject, $notify) use ($promiseOrValue) {
+                $promiseOrValue->then($resolve, $reject, $notify);
+            }, $canceller, $sharedData)
+            : new Promise(function($resolve, $reject, $notify) use ($promiseOrValue) {
+                $promiseOrValue->then($resolve, $reject, $notify);
+            }, $canceller);
     }
 
     /** @var $promiseOrValue mixed */
-    return new FulfilledPromise($promiseOrValue, $sharedData);
+    return isset($sharedData)
+        ? new FulfilledPromiseWithSD($promiseOrValue, $sharedData)
+        : new FulfilledPromise($promiseOrValue);
 }
 
 /**
@@ -44,11 +50,15 @@ function reject($promiseOrValue = null, SharedDataInterface $sharedData = null)
 {
     if ($promiseOrValue instanceof PromiseInterface) {
         return resolve($promiseOrValue, $sharedData)->then(function ($value, $sharedData = null) {
-            return new RejectedPromise($value, $sharedData);
+            return isset($sharedData)
+                ? new RejectedPromiseWithSD($value, $sharedData)
+                : new RejectedPromise($value);
         });
     }
 
-    return new RejectedPromise($promiseOrValue, $sharedData);
+    return isset($sharedData)
+        ? new RejectedPromiseWithSD($promiseOrValue, $sharedData)
+        : new RejectedPromise($promiseOrValue);
 }
 
 /**
