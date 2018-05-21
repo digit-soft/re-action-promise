@@ -8,12 +8,14 @@ use React\Promise\CancellablePromiseInterface;
  * Class LazyPromise
  * @package Reaction\Promise
  */
-class LazyPromise implements ExtendedPromiseInterface, CancellablePromiseInterface
+class LazyPromise implements ExtendedPromiseInterface, CancellablePromiseInterface, LazyPromiseInterface
 {
     /** @var callable Promise factory callback */
     protected $factory;
     /** @var ExtendedPromiseInterface Generated promise */
     protected $promise;
+    /** @var array Applied methods chain */
+    protected $chain = [];
 
     /**
      * LazyPromise constructor.
@@ -101,8 +103,79 @@ class LazyPromise implements ExtendedPromiseInterface, CancellablePromiseInterfa
             } catch (\Throwable $exception) {
                 $this->promise = new RejectedPromise($exception);
             }
+            $this->promise = static::chainApply($this->promise, $this->chain);
+            $this->chain = [];
         }
 
         return $this->promise;
+    }
+
+    /**
+     * Lazy variant of ::then()
+     * @param callable|null $onFulfilled
+     * @param callable|null $onRejected
+     * @param callable|null $onProgress
+     * @return ExtendedPromiseInterface
+     */
+    public function thenLazy(callable $onFulfilled = null, callable $onRejected = null, callable $onProgress = null)
+    {
+        return $this->chainAdd('then', func_get_args());
+    }
+
+    /**
+     * Lazy variant of ::always()
+     * @param callable $onFulfilledOrRejected
+     * @return ExtendedPromiseInterface
+     * @see ExtendedPromiseInterface::always()
+     */
+    public function alwaysLazy(callable $onFulfilledOrRejected)
+    {
+        return $this->chainAdd('always', func_get_args());
+    }
+
+    /**
+     * Lazy variant of ::otherwise()
+     * @param callable $onRejected
+     * @return ExtendedPromiseInterface
+     */
+    public function otherwiseLazy(callable $onRejected)
+    {
+        return $this->chainAdd('otherwise', func_get_args());
+    }
+
+    /**
+     * Add lazy method to chain
+     * @param string $method
+     * @param array  $arguments
+     * @return ExtendedPromiseInterface
+     */
+    protected function chainAdd($method, $arguments = [])
+    {
+        $this->chain[] = [
+            'method' => $method,
+            'arguments' => $arguments,
+        ];
+        if ($this->promise !== null) {
+            $chain = $this->chain;
+            $this->chain = [];
+            return static::chainApply($this->promise, $chain);
+        }
+        return $this;
+    }
+
+    /**
+     * Apply stored chain to promise
+     * @param ExtendedPromiseInterface $promise
+     * @param array $chain
+     * @return ExtendedPromiseInterface
+     */
+    protected static function chainApply($promise, $chain = [])
+    {
+        $resPromise = $promise;
+        foreach ($chain as $row) {
+            $resPromise = call_user_func_array([$resPromise, $row['method']], $row['arguments']);
+        }
+
+        return $promise;
     }
 }
