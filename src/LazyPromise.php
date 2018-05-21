@@ -103,7 +103,7 @@ class LazyPromise implements ExtendedPromiseInterface, CancellablePromiseInterfa
             } catch (\Throwable $exception) {
                 $this->promise = new RejectedPromise($exception);
             }
-            $this->promise = static::chainApply($this->promise, $this->chain);
+            static::chainApply($this->promise, $this->chain);
             $this->chain = [];
         }
 
@@ -158,7 +158,8 @@ class LazyPromise implements ExtendedPromiseInterface, CancellablePromiseInterfa
         if ($this->promise !== null) {
             $chain = $this->chain;
             $this->chain = [];
-            return static::chainApply($this->promise, $chain);
+            static::chainApply($this->promise, $chain);
+            return $this->promise;
         }
         return $this;
     }
@@ -167,15 +168,11 @@ class LazyPromise implements ExtendedPromiseInterface, CancellablePromiseInterfa
      * Apply stored chain to promise
      * @param ExtendedPromiseInterface $promise
      * @param array $chain
-     * @return ExtendedPromiseInterface
      */
-    protected static function chainApply($promise, $chain = [])
+    protected static function chainApply(&$promise, $chain = [])
     {
-        $resPromise = $promise;
         foreach ($chain as $row) {
-            $resPromise = call_user_func_array([$resPromise, $row['method']], $row['arguments']);
+            $promise = call_user_func_array([$promise, $row['method']], $row['arguments']);
         }
-
-        return $promise;
     }
 }
