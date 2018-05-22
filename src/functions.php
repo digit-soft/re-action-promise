@@ -16,6 +16,8 @@ function resolve($promiseOrValue = null, SharedDataInterface &$sharedData = null
     if ($promiseOrValue instanceof PromiseWithSharedDataInterface && isset($sharedData)) {
         _mergeSharedData($sharedData, $promiseOrValue->sharedData, true);
         return $promiseOrValue;
+    } elseif ($promiseOrValue instanceof ExtendedPromiseInterface) {
+        return $promiseOrValue;
     }
 
     /** @var $promiseOrValue PromiseInterface */
@@ -62,6 +64,8 @@ function reject($promiseOrValue = null, SharedDataInterface $sharedData = null)
 }
 
 /**
+ * Returns promise which will be resolved when all given promises resolves
+ * and rejected when at least one will reject be rejected
  * @param PromiseInterface[]|mixed[] $promisesOrValues
  * @return ExtendedPromiseInterface
  */
@@ -70,6 +74,20 @@ function all($promisesOrValues)
     return map($promisesOrValues, function ($val) {
         return $val;
     });
+}
+
+/**
+ * Returns promise which will be resolved when all given promises resolves
+ * and rejected when at least one will reject be rejected
+ * Promises will be resolved in given order one by one,
+ * so the giving LazyPromises array is the best way for this function
+ * @param PromiseInterface[]|mixed[] $promisesOrValues
+ * @return ExtendedPromiseInterface
+ */
+function allInOrder($promisesOrValues) {
+    $queue = new OrderedExecutionQueue();
+    $queue->enqueueMultiple($promisesOrValues);
+    return $queue();
 }
 
 /**
