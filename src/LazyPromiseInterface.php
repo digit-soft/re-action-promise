@@ -6,7 +6,7 @@ namespace Reaction\Promise;
  * Interface LazyPromiseInterface
  * @package Reaction\Promise
  */
-interface LazyPromiseInterface
+interface LazyPromiseInterface extends ExtendedPromiseInterface
 {
     /**
      * Lazy variant of ::then()

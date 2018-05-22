@@ -8,7 +8,7 @@ use React\Promise\CancellablePromiseInterface;
  * Class LazyPromise
  * @package Reaction\Promise
  */
-class LazyPromise implements ExtendedPromiseInterface, CancellablePromiseInterface, LazyPromiseInterface
+class LazyPromise implements LazyPromiseInterface, CancellablePromiseInterface
 {
     /** @var callable Promise factory callback */
     protected $factory;
