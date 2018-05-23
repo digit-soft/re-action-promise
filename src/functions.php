@@ -44,6 +44,16 @@ function resolve($promiseOrValue = null, SharedDataInterface &$sharedData = null
 }
 
 /**
+ * @param mixed $promiseOrValue
+ * @return LazyPromiseInterface
+ */
+function resolveLazy($promiseOrValue = null) {
+    return new LazyPromise(function() use($promiseOrValue) {
+        return resolve($promiseOrValue);
+    });
+}
+
+/**
  * @param PromiseInterface|mixed $promiseOrValue
  * @param SharedDataInterface|null $sharedData
  * @return ExtendedPromiseInterface
@@ -61,6 +71,16 @@ function reject($promiseOrValue = null, SharedDataInterface $sharedData = null)
     return isset($sharedData)
         ? new RejectedPromiseWithSD($promiseOrValue, $sharedData)
         : new RejectedPromise($promiseOrValue);
+}
+
+/**
+ * @param mixed $promiseOrValue
+ * @return LazyPromiseInterface
+ */
+function rejectLazy($promiseOrValue = null) {
+    return new LazyPromise(function() use($promiseOrValue) {
+        return reject($promiseOrValue);
+    });
 }
 
 /**
@@ -85,6 +105,9 @@ function all($promisesOrValues)
  * @return ExtendedPromiseInterface
  */
 function allInOrder($promisesOrValues) {
+    if (!is_array($promisesOrValues)) {
+        $promisesOrValues = [$promisesOrValues];
+    }
     $queue = new OrderedExecutionQueue();
     $queue->enqueueMultiple($promisesOrValues);
     return $queue();
