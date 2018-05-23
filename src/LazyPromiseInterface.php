@@ -13,7 +13,7 @@ interface LazyPromiseInterface extends ExtendedPromiseInterface
      * @param callable|null $onFulfilled
      * @param callable|null $onRejected
      * @param callable|null $onProgress
-     * @return LazyPromise
+     * @return LazyPromiseInterface
      * @see ExtendedPromiseInterface::then()
      */
     public function thenLazy(callable $onFulfilled = null, callable $onRejected = null, callable $onProgress = null);
@@ -21,7 +21,7 @@ interface LazyPromiseInterface extends ExtendedPromiseInterface
     /**
      * Lazy variant of ::always()
      * @param callable $onFulfilledOrRejected
-     * @return LazyPromise
+     * @return LazyPromiseInterface
      * @see ExtendedPromiseInterface::always()
      */
     public function alwaysLazy(callable $onFulfilledOrRejected);
@@ -29,7 +29,7 @@ interface LazyPromiseInterface extends ExtendedPromiseInterface
     /**
      * Lazy variant of ::otherwise()
      * @param callable $onRejected
-     * @return LazyPromise
+     * @return LazyPromiseInterface
      * @see ExtendedPromiseInterface::otherwise()
      */
     public function otherwiseLazy(callable $onRejected);
