@@ -65,7 +65,8 @@ class Deferred implements PromisorInterface
     }
 
     /**
-     * @deprecated 2.6.0 Progress support is deprecated and should not be used anymore.
+     * Notify callback.
+     * Warning! Deprecated.
      * @param mixed $update
      */
     public function notify($update = null)
@@ -76,7 +77,8 @@ class Deferred implements PromisorInterface
     }
 
     /**
-     * @deprecated 2.2.0
+     * Progress callback.
+     * Warning! Deprecated.
      * @see Deferred::notify()
      * @param mixed $update
      */
