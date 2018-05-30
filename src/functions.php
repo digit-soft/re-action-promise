@@ -105,6 +105,9 @@ function all($promisesOrValues)
  * @return ExtendedPromiseInterface
  */
 function allInOrder($promisesOrValues) {
+    if ($promisesOrValues === null || (is_array($promisesOrValues) && empty($promisesOrValues))) {
+        return resolve([]);
+    }
     if (!is_array($promisesOrValues)) {
         $promisesOrValues = [$promisesOrValues];
     }
