@@ -2,8 +2,12 @@
 
 namespace Reaction\Promise;
 
+use React\EventLoop\LoopInterface;
+use React\Promise\CancellablePromiseInterface;
 use React\Promise\CancellationQueue;
 use React\Promise\PromiseInterface;
+use React\Promise\Timer\TimeoutException;
+use Reaction\Exceptions\InvalidParamException;
 
 /**
  * @param PromiseInterface|mixed $promiseOrValue
@@ -312,6 +316,95 @@ function reduce($promisesOrValues, callable $reduceFunc, $initialValue = null)
     }, $cancellationQueue);
 }
 
+/**
+ * Set promise timeout after which it will be canceled
+ * @param PromiseInterface   $promise
+ * @param int                $time
+ * @param LoopInterface|null $loop
+ * @return ExtendedPromiseInterface
+ */
+function timeout(PromiseInterface $promise, $time, LoopInterface $loop = null)
+{
+    _ensureLoop($loop);
+    // cancelling this promise will only try to cancel the input promise,
+    // thus leaving responsibility to the input promise.
+    $canceller = null;
+    if ($promise instanceof CancellablePromiseInterface) {
+        // pass promise by reference to clean reference after cancellation handler
+        // has been invoked once in order to avoid garbage references in call stack.
+        $canceller = function() use (&$promise) {
+            $promise->cancel();
+            $promise = null;
+        };
+    }
+    return new Promise(function($resolve, $reject) use ($loop, $time, $promise) {
+        $timer = null;
+        $promise = $promise->then(function($v) use (&$timer, $loop, $resolve) {
+            if ($timer) {
+                $loop->cancelTimer($timer);
+            }
+            $timer = false;
+            $resolve($v);
+        }, function($v) use (&$timer, $loop, $reject) {
+            if ($timer) {
+                $loop->cancelTimer($timer);
+            }
+            $timer = false;
+            $reject($v);
+        });
+        //Promise already resolved, so no need to start timer
+        if ($timer === false) {
+            return;
+        }
+        //Start timeout timer which will cancel the input promise
+        $timer = $loop->addTimer($time, function() use ($time, &$promise, $reject) {
+            $reject(new TimeoutException($time, 'Timed out after ' . $time . ' seconds'));
+            //Try to invoke cancellation handler of input promise and then clean
+            //reference in order to avoid garbage references in call stack.
+            if ($promise instanceof CancellablePromiseInterface) {
+                $promise->cancel();
+            }
+            $promise = null;
+        });
+    }, $canceller);
+}
+
+/**
+ * Resolve promise after some time
+ * @param int                $time
+ * @param LoopInterface|null $loop
+ * @return Promise
+ */
+function resolveInTime($time, LoopInterface $loop = null)
+{
+    _ensureLoop($loop);
+    return new Promise(function($resolve) use ($loop, $time, &$timer) {
+        //Resolve the promise when the timer fires in $time seconds
+        $timer = $loop->addTimer($time, function() use ($time, $resolve) {
+            $resolve($time);
+        });
+    }, function() use (&$timer, $loop) {
+        //Cancelling this promise will cancel the timer, clean the reference
+        //in order to avoid garbage references in call stack and then reject.
+        $loop->cancelTimer($timer);
+        $timer = null;
+        throw new \RuntimeException('Timer cancelled');
+    });
+}
+
+/**
+ * Reject promise after some time
+ * @param int           $time
+ * @param LoopInterface $loop
+ * @return ExtendedPromiseInterface
+ */
+function rejectInReject($time, LoopInterface $loop)
+{
+    return resolve($time, $loop)->then(function ($time) {
+        throw new TimeoutException($time, 'Timer expired after ' . $time . ' seconds');
+    });
+}
+
 // Internal functions
 
 /**
@@ -366,5 +459,20 @@ function _mergeSharedData(&$data, &$data2, $reassign = false) {
     }
     if ($reassign) {
         $data2 = $data;
+    }
+}
+
+/**
+ * Ensure that $loop is instance of LoopInterface
+ * @param mixed $loop
+ */
+function _ensureLoop(&$loop = null)
+{
+    if ($loop === null || !$loop instanceof LoopInterface) {
+        if (class_exists('\Reaction') && isset(\Reaction::$app)) {
+            $loop = \Reaction::$app->loop;
+        } else {
+            throw new InvalidParamException("Parameter '\$loop' must be instance of 'React\EventLoop\LoopInterface'");
+        }
     }
 }
